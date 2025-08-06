@@ -1,8 +1,8 @@
 package models
 
 type SummaryRequest struct {
-	StartTime string `form:"from" binding:"datetime=2006-01-02T15:04:05Z"`
-	EndTime   string `form:"to" binding:"datetime=2006-01-02T15:04:05Z"`
+	StartTime string `query:"from"`
+	EndTime   string `query:"to"`
 }
 
 type SummaryParam struct {

@@ -32,6 +32,7 @@ type Config struct {
 	ServiceRefreshInterval time.Duration
 	ServerURL              string
 	ServerSocket           string
+	ServerPrefork          bool
 }
 
 type ConfigCache struct {
@@ -129,6 +130,7 @@ func (c *Config) Init() {
 		log.Fatal("at least one services is required")
 	}
 	c.ServiceRefreshInterval = utils.GetEnvDuration("SERVICE_REFRESH_INTERVAL", "5s")
+	c.ServerPrefork = utils.GetEnvBool("SERVER_PREFORK", false)
 	c.ServerURL = utils.GetEnv("SERVER_URL", ":5000")
 	c.ServerSocket = utils.GetEnv("SOCKET_PATH", "")
 	c.RedisURL = utils.GetEnv("REDIS_URL", "redis:6379")

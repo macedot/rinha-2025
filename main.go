@@ -82,7 +82,7 @@ func main() {
 	}()
 
 	app := fiber.New(fiber.Config{
-		Prefork: true,
+		Prefork: cfg.ServerPrefork,
 	})
 	if cfg.DebugMode {
 		app.Use(logger.New())
@@ -99,15 +99,15 @@ func main() {
 	})
 
 	app.Get("/payments-summary", func(c *fiber.Ctx) error {
-		summaryReg := models.SummaryRequest{
-			StartTime: c.Query("from"),
-			EndTime:   c.Query("to"),
+		var request models.SummaryRequest
+		if err := c.QueryParser(&request); err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
 		}
-		summaryRes, err := services.GetSummary(&summaryReg)
+		response, err := services.GetSummary(&request)
 		if err != nil {
 			return c.SendStatus(fiber.StatusInternalServerError)
 		}
-		return c.JSON(summaryRes)
+		return c.JSON(response)
 	})
 
 	app.Post("/purge-payments", func(c *fiber.Ctx) error {
