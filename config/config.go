@@ -7,6 +7,8 @@ import (
 	"os"
 	"rinha-2025/utils"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 type Service struct {
@@ -85,6 +87,7 @@ func (c *Config) UpdateInstances() {
 }
 
 func (c *Config) Init() {
+	godotenv.Load()
 	c.DebugMode = utils.GetEnvBool("API_DEBUG_MODE", false)
 	var services []Service
 	envServices := os.Getenv("SERVICES")
