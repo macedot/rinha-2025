@@ -82,7 +82,7 @@ func main() {
 	}()
 
 	app := fiber.New(fiber.Config{
-		Prefork: true,
+		Prefork: cfg.ServerPrefork,
 	})
 	if cfg.DebugMode {
 		app.Use(logger.New())
