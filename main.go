@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"math/rand"
 	"net"
@@ -14,9 +15,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/fiber/v2/middleware/pprof"
+	"github.com/valyala/fasthttp"
 )
 
 func NewListenUnix(socketPath string) net.Listener {
@@ -54,7 +53,7 @@ func main() {
 	redis := database.RedisInstance()
 	redis.Connect(cfg)
 
-	listener := NewListenUnix(cfg.ServerSocket)
+	//listener := NewListenUnix(cfg.ServerSocket)
 
 	go func() {
 		services.ResetHealthTimeout()
@@ -84,46 +83,47 @@ func main() {
 		}
 	}()
 
-	app := fiber.New(fiber.Config{
-		Prefork: cfg.ServerPrefork,
-	})
-	if cfg.DebugMode {
-		app.Use(logger.New())
-		app.Use(pprof.New())
+	requestHandler := func(ctx *fasthttp.RequestCtx) {
+		path := ctx.Path()
+		switch string(path) {
+		case "/payments":
+			var payment models.Payment
+			body := ctx.Request.Body()
+			if err := json.Unmarshal(body, &payment); err != nil {
+				ctx.Error(err.Error(), fasthttp.StatusBadRequest)
+				return
+			}
+			services.EnqueuePayment(&payment, queue)
+			ctx.SetStatusCode(fasthttp.StatusOK)
+			return
+
+		case "/payments-summary":
+			var request models.SummaryRequest
+			request.StartTime = string(ctx.QueryArgs().Peek("from"))
+			request.EndTime = string(ctx.QueryArgs().Peek("to"))
+			response, err := services.GetSummary(&request)
+			if err != nil {
+				ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
+				return
+			}
+			body, err := json.Marshal(response)
+			if err != nil {
+				ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
+				return
+			}
+			ctx.SetBody(body)
+			ctx.SetStatusCode(fasthttp.StatusOK)
+			return
+
+		case "/purge-payments":
+			if err := services.PurgePayments(); err != nil {
+				ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
+				return
+			}
+			ctx.SetStatusCode(fasthttp.StatusOK)
+			return
+		}
 	}
 
-	app.Post("/payments", func(c *fiber.Ctx) error {
-		var payment models.Payment
-		if err := c.BodyParser(&payment); err != nil {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
-		services.EnqueuePayment(&payment, queue)
-		return c.JSON(fiber.Map{})
-	})
-
-	app.Get("/payments-summary", func(c *fiber.Ctx) error {
-		var request models.SummaryRequest
-		if err := c.QueryParser(&request); err != nil {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
-		response, err := services.GetSummary(&request)
-		if err != nil {
-			return c.SendStatus(fiber.StatusInternalServerError)
-		}
-		return c.JSON(response)
-	})
-
-	app.Post("/purge-payments", func(c *fiber.Ctx) error {
-		if err := services.PurgePayments(); err != nil {
-			return c.SendStatus(fiber.StatusInternalServerError)
-		}
-		runtime.GC()
-		return c.JSON(fiber.Map{})
-	})
-
-	if listener != nil {
-		log.Printf("Server listening on Unix socket: %s", cfg.ServerSocket)
-		log.Fatal(app.Listener(listener))
-	}
-	log.Fatal(app.Listen(cfg.ServerURL))
+	log.Fatal(fasthttp.ListenAndServe(cfg.ServerURL, requestHandler))
 }
