@@ -12,12 +12,12 @@ build:
 	@echo "🐳 Build da imagem Docker..."
 	docker build -t $(IMAGE_NAME):$(VERSION) -t $(IMAGE_NAME):latest .
 
-push: build
+push:
 	@echo "🔐 Enviando imagens..."
 	docker push $(IMAGE_NAME):$(VERSION)
 	docker push $(IMAGE_NAME):latest
 
-prod: push
+prod:
 	docker compose down && docker compose up
 
 .PHONY: dev build push prod
