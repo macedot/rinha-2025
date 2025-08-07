@@ -14,9 +14,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/fiber/v2/middleware/pprof"
+	"github.com/gogearbox/gearbox"
 )
 
 func NewListenUnix(socketPath string) net.Listener {
@@ -54,7 +52,7 @@ func main() {
 	redis := database.RedisInstance()
 	redis.Connect(cfg)
 
-	listener := NewListenUnix(cfg.ServerSocket)
+	//listener := NewListenUnix(cfg.ServerSocket)
 
 	go func() {
 		services.ResetHealthTimeout()
@@ -84,46 +82,38 @@ func main() {
 		}
 	}()
 
-	app := fiber.New(fiber.Config{
-		Prefork: cfg.ServerPrefork,
-	})
-	if cfg.DebugMode {
-		app.Use(logger.New())
-		app.Use(pprof.New())
-	}
+	gb := gearbox.New()
 
-	app.Post("/payments", func(c *fiber.Ctx) error {
+	gb.Post("/payments", func(ctx gearbox.Context) {
 		var payment models.Payment
-		if err := c.BodyParser(&payment); err != nil {
-			return c.SendStatus(fiber.StatusBadRequest)
+		if err := ctx.ParseBody(&payment); err != nil {
+			ctx.Status(500).SendString(err.Error())
+			return
 		}
 		services.EnqueuePayment(&payment, queue)
-		return c.JSON(fiber.Map{})
+		ctx.SendString("")
 	})
 
-	app.Get("/payments-summary", func(c *fiber.Ctx) error {
+	gb.Get("/payments-summary", func(ctx gearbox.Context) {
 		var request models.SummaryRequest
-		if err := c.QueryParser(&request); err != nil {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
+		request.StartTime = ctx.Query("from")
+		request.EndTime = ctx.Query("to")
 		response, err := services.GetSummary(&request)
 		if err != nil {
-			return c.SendStatus(fiber.StatusInternalServerError)
+			ctx.Status(500).SendString(err.Error())
+			return
 		}
-		return c.JSON(response)
+		ctx.SendJSON(response)
 	})
 
-	app.Post("/purge-payments", func(c *fiber.Ctx) error {
+	gb.Post("/purge-payments", func(ctx gearbox.Context) {
 		if err := services.PurgePayments(); err != nil {
-			return c.SendStatus(fiber.StatusInternalServerError)
+			ctx.Status(500).SendString(err.Error())
+			return
 		}
 		runtime.GC()
-		return c.JSON(fiber.Map{})
+		ctx.SendString("")
 	})
 
-	if listener != nil {
-		log.Printf("Server listening on Unix socket: %s", cfg.ServerSocket)
-		log.Fatal(app.Listener(listener))
-	}
-	log.Fatal(app.Listen(cfg.ServerURL))
+	log.Fatal(gb.Start(cfg.ServerURL))
 }
