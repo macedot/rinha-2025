@@ -89,30 +89,26 @@ func (c *Config) UpdateInstances() {
 }
 
 func (c *Config) Init() {
-	godotenv.Load()
-	c.DebugMode = utils.GetEnvBool("API_DEBUG_MODE", false)
+	err := godotenv.Load()
+	if err == nil {
+		log.Println("Loaded ENV from .env file")
+	}
+	c.DebugMode = utils.GetEnvBool("API_DEBUG_MODE", "false")
 	var services []Service
-	envServices := os.Getenv("SERVICES")
-	if envServices != "" {
-		err := json.Unmarshal([]byte(envServices), &services)
-		if err != nil {
-			log.Fatal("Error unmarshaling JSON:", err)
+	if envServices := os.Getenv("SERVICES"); envServices != "" {
+		if err := json.Unmarshal([]byte(envServices), &services); err != nil {
+			log.Fatal("error unmarshaling JSON:", err)
 		}
-	} else {
-		services = []Service{
-			{
-				URL:   "http://payment-processor-default:8080",
-				Table: "d",
-				Fee:   0.05,
-			},
-		}
+	}
+	if len(services) < 1 {
+		log.Fatal("at least one services is required")
 	}
 	for _, service := range services {
 		if service.URL == "" {
-			log.Fatal("Missing URL from Service")
+			log.Fatal("missing URL from Service")
 		}
 		if service.Table == "" {
-			log.Fatal("Missing Table from Service")
+			log.Fatal("missing Table from Service")
 		}
 		if service.Token == "" {
 			service.Token = "123"
@@ -126,12 +122,14 @@ func (c *Config) Init() {
 		c.Services = append(c.Services, service)
 		log.Print("Service:", service)
 	}
-	if len(c.Services) < 1 {
-		log.Fatal("at least one services is required")
-	}
-	c.ServiceRefreshInterval = utils.GetEnvDuration("SERVICE_REFRESH_INTERVAL", "5s")
-	c.ServerPrefork = utils.GetEnvBool("SERVER_PREFORK", false)
-	c.ServerURL = utils.GetEnv("SERVER_URL", ":5000")
+	c.ServerURL = utils.GetEnv("SERVER_URL")
+	c.RedisURL = utils.GetEnv("REDIS_URL")
+
 	c.ServerSocket = utils.GetEnv("SOCKET_PATH", "")
-	c.RedisURL = utils.GetEnv("REDIS_URL", "redis:6379")
+	c.ServerPrefork = utils.GetEnvBool("SERVER_PREFORK", "false")
+	c.ServiceRefreshInterval = utils.GetEnvDuration("SERVICE_REFRESH_INTERVAL", "5s")
+
+	if c.DebugMode {
+		fmt.Printf("\n%+v\n\n", c)
+	}
 }

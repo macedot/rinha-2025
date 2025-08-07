@@ -11,6 +11,7 @@ import (
 	"rinha-2025/models"
 	"rinha-2025/services"
 	"runtime"
+	"runtime/debug"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -41,6 +42,8 @@ func NewListenUnix(socketPath string) net.Listener {
 
 func main() {
 	runtime.GOMAXPROCS(1)
+	debug.SetGCPercent(-1)
+	debug.SetMemoryLimit(90 * 1024 * 1024)
 
 	cfg := config.ConfigInstance()
 	cfg.Init()
@@ -114,6 +117,7 @@ func main() {
 		if err := services.PurgePayments(); err != nil {
 			return c.SendStatus(fiber.StatusInternalServerError)
 		}
+		runtime.GC()
 		return c.JSON(fiber.Map{})
 	})
 

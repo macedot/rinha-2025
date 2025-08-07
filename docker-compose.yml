@@ -2,6 +2,8 @@ name: rinha-2025
 
 x-api_template: &api_template
   image: macedot/rinha-2025:latest
+  env_file:
+    - .env
   depends_on:
     - redis
   networks:
