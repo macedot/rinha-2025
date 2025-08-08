@@ -1,11 +1,12 @@
 package services
 
 import (
-	"encoding/json"
 	"rinha-2025/config"
 	"rinha-2025/database"
 	"rinha-2025/models"
 	"time"
+
+	"github.com/ohler55/ojg/oj"
 )
 
 func EnqueuePayment(payment *models.Payment, queue *Queue) {
@@ -22,7 +23,7 @@ func ProcessPayment(payment *models.Payment) error {
 		}
 		time.Sleep(time.Millisecond)
 	}
-	payload, err := json.Marshal(payment)
+	payload, err := oj.Marshal(payment)
 	if err != nil {
 		return err
 	}

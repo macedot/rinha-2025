@@ -3,7 +3,7 @@ name: rinha-2025
 x-api_template: &api_template
   build: .
   env_file:
-    - .env.dev
+    - .env
   depends_on:
     - redis
   networks:

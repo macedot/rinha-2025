@@ -1,7 +1,6 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -9,6 +8,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/ohler55/ojg/oj"
 )
 
 type Service struct {
@@ -19,20 +19,17 @@ type Service struct {
 
 	Failing         bool
 	MinResponseTime uint32
-	Timeout         time.Duration
 	KeyAmount       string
 	KeyTime         string
 }
 
 type Config struct {
 	DebugMode              bool
+	ServerURL              string
 	RedisURL               string
 	Instances              []Service
 	Services               []Service
 	ServiceRefreshInterval time.Duration
-	ServerURL              string
-	ServerSocket           string
-	ServerPrefork          bool
 }
 
 type ConfigCache struct {
@@ -96,7 +93,7 @@ func (c *Config) Init() {
 	c.DebugMode = utils.GetEnvBool("API_DEBUG_MODE", "false")
 	var services []Service
 	if envServices := os.Getenv("SERVICES"); envServices != "" {
-		if err := json.Unmarshal([]byte(envServices), &services); err != nil {
+		if err := oj.Unmarshal([]byte(envServices), &services); err != nil {
 			log.Fatal("error unmarshaling JSON:", err)
 		}
 	}
@@ -116,7 +113,6 @@ func (c *Config) Init() {
 		//service.Fee = 0.0
 		service.Failing = false
 		service.MinResponseTime = 0
-		service.Timeout = 10 * time.Second
 		service.KeyAmount = fmt.Sprintf("summary:%s:data", service.Table)
 		service.KeyTime = fmt.Sprintf("summary:%s:history", service.Table)
 		c.Services = append(c.Services, service)
@@ -124,11 +120,7 @@ func (c *Config) Init() {
 	}
 	c.ServerURL = utils.GetEnv("SERVER_URL")
 	c.RedisURL = utils.GetEnv("REDIS_URL")
-
-	c.ServerSocket = utils.GetEnv("SOCKET_PATH", "")
-	c.ServerPrefork = utils.GetEnvBool("SERVER_PREFORK", "false")
 	c.ServiceRefreshInterval = utils.GetEnvDuration("SERVICE_REFRESH_INTERVAL", "5s")
-
 	if c.DebugMode {
 		fmt.Printf("\n%+v\n\n", c)
 	}

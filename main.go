@@ -1,12 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"math/rand"
-	"net"
-	"os"
-	"path/filepath"
 	"rinha-2025/config"
 	"rinha-2025/database"
 	"rinha-2025/models"
@@ -15,29 +11,9 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/ohler55/ojg/oj"
 	"github.com/valyala/fasthttp"
 )
-
-func NewListenUnix(socketPath string) net.Listener {
-	if socketPath == "" {
-		return nil
-	}
-	socketDir := filepath.Dir(socketPath)
-	if err := os.MkdirAll(socketDir, 0755); err != nil {
-		log.Fatalf("Failed to create socket directory: %v", err)
-	}
-	if err := os.RemoveAll(socketPath); err != nil {
-		log.Fatalf("Failed to remove existing socket: %v", err)
-	}
-	listener, err := net.Listen("unix", socketPath)
-	if err != nil {
-		log.Fatalf("Failed to listen on Unix socket: %v", err)
-	}
-	if err := os.Chmod(socketPath, 0666); err != nil {
-		log.Fatalf("Failed to set socket permissions: %v", err)
-	}
-	return listener
-}
 
 func main() {
 	runtime.GOMAXPROCS(1)
@@ -52,8 +28,6 @@ func main() {
 
 	redis := database.RedisInstance()
 	redis.Connect(cfg)
-
-	//listener := NewListenUnix(cfg.ServerSocket)
 
 	go func() {
 		services.ResetHealthTimeout()
@@ -89,7 +63,7 @@ func main() {
 		case "/payments":
 			var payment models.Payment
 			body := ctx.Request.Body()
-			if err := json.Unmarshal(body, &payment); err != nil {
+			if err := oj.Unmarshal(body, &payment); err != nil {
 				ctx.Error(err.Error(), fasthttp.StatusBadRequest)
 				return
 			}
@@ -106,7 +80,7 @@ func main() {
 				ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
 				return
 			}
-			body, err := json.Marshal(response)
+			body, err := oj.Marshal(response)
 			if err != nil {
 				ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
 				return
