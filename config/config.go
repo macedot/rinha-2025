@@ -26,13 +26,11 @@ type Service struct {
 
 type Config struct {
 	DebugMode              bool
+	ServerURL              string
 	RedisURL               string
 	Instances              []Service
 	Services               []Service
 	ServiceRefreshInterval time.Duration
-	ServerURL              string
-	ServerSocket           string
-	ServerPrefork          bool
 }
 
 type ConfigCache struct {
@@ -120,7 +118,6 @@ func (c *Config) Init() {
 		//service.Fee = 0.0
 		service.Failing = false
 		service.MinResponseTime = 0
-		service.Timeout = 10 * time.Second
 		service.KeyAmount = fmt.Sprintf("summary:%s:data", service.Table)
 		service.KeyTime = fmt.Sprintf("summary:%s:history", service.Table)
 		c.Services = append(c.Services, service)
@@ -130,8 +127,6 @@ func (c *Config) Init() {
 		log.Fatal("at least one services is required")
 	}
 	c.ServiceRefreshInterval = utils.GetEnvDuration("SERVICE_REFRESH_INTERVAL", "5s")
-	c.ServerPrefork = utils.GetEnvBool("SERVER_PREFORK", false)
 	c.ServerURL = utils.GetEnv("SERVER_URL", ":5000")
-	c.ServerSocket = utils.GetEnv("SOCKET_PATH", "")
 	c.RedisURL = utils.GetEnv("REDIS_URL", "redis:6379")
 }

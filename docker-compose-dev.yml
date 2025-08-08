@@ -1,9 +1,7 @@
 name: rinha-2025
 
 x-api_template: &api_template
-  image: macedot/rinha-2025:latest
-  volumes:
-    - sockets:/sockets:rw
+  build: .
   depends_on:
     - redis
   networks:
@@ -19,21 +17,16 @@ services:
   api01:
     <<: *api_template
     hostname: api01
-    environment:
-      - SOCKET_PATH=/sockets/go.sock.1
 
   api02:
     <<: *api_template
     hostname: api02
-    environment:
-      - SOCKET_PATH=/sockets/go.sock.2
 
   gateway:
     image: haproxy:3.2.3-alpine
     hostname: rinha-gateway
     volumes:
-      - sockets:/sockets:rw
-      - ./haproxy-socket.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     depends_on:
       - api01
       - api02

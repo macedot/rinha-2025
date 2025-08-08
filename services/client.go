@@ -31,19 +31,14 @@ func HttpClientInstance() *Client {
 }
 
 func (c *Client) Init() {
-	c.dnsCache = NewDNSCache(5 * time.Minute)
+	c.dnsCache = &DNSCache{
+		cache: make(map[string][]string),
+		mutex: sync.RWMutex{},
+		ttl:   5 * time.Minute,
+	}
 	c.http = &http.Client{
 		Transport: CustomTransport(client.dnsCache),
 		Timeout:   30 * time.Second,
-	}
-}
-
-// NewDNSCache creates a new DNS cache with specified TTL
-func NewDNSCache(ttl time.Duration) *DNSCache {
-	return &DNSCache{
-		cache: make(map[string][]string),
-		mutex: sync.RWMutex{},
-		ttl:   ttl,
 	}
 }
 
@@ -78,14 +73,6 @@ func (dc *DNSCache) Resolve(host string) ([]string, error) {
 	return addrs, nil
 }
 
-// CustomDialer creates a dialer with DNS cache
-func CustomDialer(dc *DNSCache) *net.Dialer {
-	return &net.Dialer{
-		Timeout:   30 * time.Second,
-		KeepAlive: 30 * time.Second,
-	}
-}
-
 // CustomTransport creates an HTTP transport with custom dialer
 func CustomTransport(dc *DNSCache) *http.Transport {
 	return &http.Transport{
@@ -102,7 +89,10 @@ func CustomTransport(dc *DNSCache) *http.Transport {
 			}
 
 			// Try connecting to each resolved IP
-			dialer := CustomDialer(dc)
+			dialer := &net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}
 			for _, ip := range addrs {
 				conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
 				if err == nil {
