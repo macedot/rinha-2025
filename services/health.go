@@ -1,7 +1,6 @@
 package services
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"reflect"
@@ -10,6 +9,8 @@ import (
 	"rinha-2025/models"
 	"sync"
 	"time"
+
+	"github.com/ohler55/ojg/oj"
 )
 
 const (
@@ -39,7 +40,7 @@ func GetInstancesCache() []config.Service {
 	redis := database.RedisInstance()
 	jsonData := redis.GetString(HEALTH_REDIS_KEY, HEALTH_REDIS_INSTANCES)
 	if jsonData != "" {
-		err := json.Unmarshal([]byte(jsonData), &instances)
+		err := oj.Unmarshal([]byte(jsonData), &instances)
 		if err != nil {
 			log.Print("GetInstancesCache:", err, jsonData)
 		}
@@ -48,7 +49,7 @@ func GetInstancesCache() []config.Service {
 }
 
 func SetInstancesCache(instances []config.Service) error {
-	bytes, err := json.Marshal(instances)
+	bytes, err := oj.Marshal(instances)
 	if err == nil {
 		redis := database.RedisInstance()
 		err = redis.SetString(HEALTH_REDIS_KEY, HEALTH_REDIS_INSTANCES, string(bytes))
@@ -110,7 +111,7 @@ func getServiceHealth(service config.Service) models.HealthResponse {
 	client := HttpClientInstance()
 	statusCode, body := client.Get(service.URL + "/payments/service-health")
 	if statusCode == http.StatusOK {
-		if err := json.Unmarshal(body, &health); err != nil {
+		if err := oj.Unmarshal(body, &health); err != nil {
 			health.Failing = true
 			log.Print("getServiceHealth:", service.URL, err)
 		}

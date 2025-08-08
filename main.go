@@ -3,9 +3,6 @@ package main
 import (
 	"log"
 	"math/rand"
-	"net"
-	"os"
-	"path/filepath"
 	"rinha-2025/config"
 	"rinha-2025/database"
 	"rinha-2025/models"
@@ -16,27 +13,6 @@ import (
 
 	"github.com/gogearbox/gearbox"
 )
-
-func NewListenUnix(socketPath string) net.Listener {
-	if socketPath == "" {
-		return nil
-	}
-	socketDir := filepath.Dir(socketPath)
-	if err := os.MkdirAll(socketDir, 0755); err != nil {
-		log.Fatalf("Failed to create socket directory: %v", err)
-	}
-	if err := os.RemoveAll(socketPath); err != nil {
-		log.Fatalf("Failed to remove existing socket: %v", err)
-	}
-	listener, err := net.Listen("unix", socketPath)
-	if err != nil {
-		log.Fatalf("Failed to listen on Unix socket: %v", err)
-	}
-	if err := os.Chmod(socketPath, 0666); err != nil {
-		log.Fatalf("Failed to set socket permissions: %v", err)
-	}
-	return listener
-}
 
 func main() {
 	runtime.GOMAXPROCS(1)
@@ -51,8 +27,6 @@ func main() {
 
 	redis := database.RedisInstance()
 	redis.Connect(cfg)
-
-	//listener := NewListenUnix(cfg.ServerSocket)
 
 	go func() {
 		services.ResetHealthTimeout()

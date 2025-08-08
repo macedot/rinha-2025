@@ -6,7 +6,9 @@ IMAGE_NAME := $(DOCKER_USER)/$(APP_NAME)
 VERSION := $(shell git rev-parse --short HEAD)
 
 dev:
-	docker compose -f ./docker-compose-dev.yml down && docker compose -f ./docker-compose-dev.yml  build && docker compose -f docker-compose-dev.yml up
+	docker compose -f ./docker-compose-dev.yml down && \
+	docker compose -f ./docker-compose-dev.yml build && \
+	docker compose -f ./docker-compose-dev.yml up
 
 build:
 	@echo "🐳 Build da imagem Docker..."
