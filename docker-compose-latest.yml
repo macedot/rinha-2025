@@ -1,7 +1,7 @@
 name: rinha-2025
 
 x-api_template: &api_template
-  build: .
+  image: macedot/rinha-2025:latest
   env_file:
     - .env
   depends_on:
