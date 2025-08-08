@@ -52,17 +52,6 @@ func (c *Client) Get(url string) (int, []byte) {
 		log.Fatalf("HTTP GET request failed: %v", err)
 	}
 	return statusCode, resp.Body()
-
-	// resp, err := c.http.Get(url)
-	// if err != nil {
-	// 	log.Fatalf("HTTP GET request failed: %v", err)
-	// }
-	// defer resp.Body.Close()
-	// body, err := io.ReadAll(resp.Body)
-	// if err == nil {
-	// 	return resp.StatusCode, body
-	// }
-	// return resp.StatusCode, nil
 }
 
 func (c *Client) Post(url string, payload []byte) error {
@@ -83,11 +72,4 @@ func (c *Client) Post(url string, payload []byte) error {
 		return fmt.Errorf("invalid HTTP response code: %d", statusCode)
 	}
 	return nil
-
-	// resp, err := c.client.Post(url, "application/json", bytes.NewReader(payload))
-	// if err != nil {
-	// 	return fmt.Errorf("HTTP POST request failed: %v", err)
-	// }
-	// defer resp.Body.Close()
-	// return nil
 }
