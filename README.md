@@ -15,7 +15,7 @@ O projeto foi em grande parte cop...digo, inspirado no projeto da [Joyce Godinho
 ### Suba tudo com Docker! 🐳
 
 ```bash
-git clone https://github.com/macedot/rinha-2025-go
+git clone https://rinha-2025-go
 cd rinha-2025-go
 docker compose up -d --build
 ```
@@ -32,7 +32,7 @@ docker compose up -d --build
 
 ## Repositório no GitHub
 
-Curtiu? Dê uma olhada no [código fonte](https://github.com/macedot/rinha-2025-go) e deixe uma ⭐!
+Curtiu? Dê uma olhada no [código fonte](https://rinha-2025-go) e deixe uma ⭐!
 
 ## ✨ Agradecimentos
 

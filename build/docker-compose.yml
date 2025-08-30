@@ -31,12 +31,16 @@ services:
       - ../config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
       - shm:/dev/shm
     depends_on:
-      api01:
-        condition: service_healthy
-      api02:
-        condition: service_healthy
-      api03:
-        condition: service_healthy
+      # api01:
+      #   condition: service_healthy
+      # api02:
+      #   condition: service_healthy
+      # api03:
+      #   condition: service_healthy
+      - api01
+      - api02
+      - api03
+
     networks:
       - rinha
     ports:
@@ -63,7 +67,7 @@ services:
       interval: 1s
       timeout: 1s
       retries: 10
-      start_period: 1s
+      start_period: 3s
 
   api02:
     <<: *api
@@ -75,7 +79,7 @@ services:
       interval: 1s
       timeout: 1s
       retries: 10
-      start_period: 1s
+      start_period: 3s
 
   api03:
     <<: *api
@@ -87,15 +91,15 @@ services:
       interval: 1s
       timeout: 1s
       retries: 10
-      start_period: 1s
+      start_period: 3s
 
   storage:
     image: postgres:17-alpine
     container_name: rinha-storage
     environment:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: rinha
+      POSTGRES_USER: rinha
+      POSTGRES_DB: rinha
     ports:
       - 1010:5432
     volumes:
@@ -107,7 +111,7 @@ services:
     networks:
       - rinha
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -U rinha -d rinha" ]
       interval: 5s
       timeout: 5s
       retries: 10

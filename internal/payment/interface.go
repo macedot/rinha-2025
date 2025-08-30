@@ -3,7 +3,7 @@ package payment
 import (
 	"context"
 
-	"github.com/macedot/rinha-2025-go/internal/types"
+	"rinha-2025-go/internal/types"
 )
 
 type writer interface {

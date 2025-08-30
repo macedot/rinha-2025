@@ -3,31 +3,29 @@ package store
 import (
 	"context"
 	"log"
-	"strconv"
 	"time"
 
+	"rinha-2025-go/internal/config"
+	"rinha-2025-go/internal/types"
+
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/macedot/rinha-2025-go/internal/types"
-	"github.com/macedot/rinha-2025-go/pkg/util"
 )
 
 type PaymentDB struct {
 	conn *pgxpool.Pool
 }
 
-func NewPaymentDB(ctx context.Context) (*PaymentDB, error) {
-	// postgresql://pg:secret@exchange_rate:5432/exchange?sslmode=disable"
-	cfg, _ := pgxpool.ParseConfig(util.GetEnvOr("DATABASE_URL", "postgresql://postgres:postgres@postgres:5432/postgres?sslmode=disable"))
-	maxConns, _ := strconv.Atoi(util.GetEnvOr("PG_MAX_CONNS", "25"))
-	cfg.MaxConns = int32(maxConns)
-	cfg.MaxConnLifetime = time.Hour
-	cfg.MaxConnIdleTime = time.Hour
-	cfg.MinConns = 20
-	conn, err := pgxpool.NewWithConfig(ctx, cfg)
+func NewPaymentDB(cfg *config.Config, ctx context.Context) *PaymentDB {
+	dbcfg, _ := pgxpool.ParseConfig(cfg.DatabaseURL)
+	dbcfg.MaxConns = int32(cfg.DatabaseMaxConns)
+	dbcfg.MaxConnLifetime = time.Hour
+	dbcfg.MaxConnIdleTime = time.Hour
+	dbcfg.MinConns = 20
+	conn, err := pgxpool.NewWithConfig(ctx, dbcfg)
 	if err != nil {
-		return nil, err
+		log.Fatalf("Unable to connect to the database: %v", err)
 	}
-	return &PaymentDB{conn: conn}, nil
+	return &PaymentDB{conn: conn}
 }
 
 func (s *PaymentDB) Close() {
