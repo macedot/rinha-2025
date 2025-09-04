@@ -33,7 +33,9 @@ func NewListenSocket(socketPath string) net.Listener {
 }
 
 func main() {
-	runtime.GOMAXPROCS(1)
+	runtime.GOMAXPROCS(3)
+	// debug.SetGCPercent(-1)
+	// debug.SetMemoryLimit(-1)
 
 	cfg := config.ConfigInstance().Init()
 
@@ -48,6 +50,8 @@ func main() {
 
 	worker := services.NewPaymentWorker(cfg, redis, client, health)
 	defer worker.Close()
+	worker.UpdateServicesFee()
+	log.Println("Starting workers:", cfg.NumWorkers)
 	for range cfg.NumWorkers {
 		go worker.ProcessQueue()
 	}
@@ -61,12 +65,11 @@ func main() {
 	e.POST("/payments", handlers.PostPayment(worker))
 	e.GET("/payments-summary", handlers.GetSummary(worker))
 	e.POST("/purge-payments", handlers.PostPurgePayments(worker))
-	e.POST("/health", handlers.GetHealth(worker))
-	//e.GET("/metrics", echoprometheus.NewHandler())
+	// e.GET("/metrics", echoprometheus.NewHandler())
 
-	log.Println("Starting Echo server")
 	log.Printf("Listening on %s", cfg.ServerSocket)
 	listener := NewListenSocket(cfg.ServerSocket)
-	log.Fatal(e.Server.Serve(listener))
+	defer listener.Close()
+	e.Logger.Fatal(e.Server.Serve(listener))
 	// e.Logger.Fatal(e.Start(":9999"))
 }
