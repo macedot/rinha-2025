@@ -10,7 +10,7 @@ CURL = curl -s -w "\nHTTP Status: %{http_code}\n"
 DOCKER_USER := macedot
 IMAGE_NAME := $(DOCKER_USER)/$(APP_NAME)
 VERSION := $(shell git rev-parse --short HEAD)
-T := $(shell date +%s)
+T := $(shell date +%Y%m%d_%H%M%S)
 
 # Default target
 .PHONY: all
